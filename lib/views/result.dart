@@ -23,19 +23,19 @@ class _ResultsState extends State<Results> {
             children: [
               Text(
                 "${widget.correct}/ ${widget.total}",
-                style: TextStyle(fontSize: 25),
+                style: const TextStyle(fontSize: 25),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 5,
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
-                  "Bạn đã trả lời ${widget.correct} đúng và ${widget.incorrect} sai",
+                  "Số điểm của bạn: ${((widget.correct / widget.total) * 10).toStringAsFixed(1)}",
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 24,
               ),
               GestureDetector(

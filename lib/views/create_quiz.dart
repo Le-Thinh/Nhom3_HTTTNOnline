@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quizmaker/services/database.dart';
+import 'package:quizmaker/views/Account/signin.dart';
 import 'package:quizmaker/views/addquestion.dart';
 import 'package:quizmaker/widgets/widgets.dart';
 import 'package:random_string/random_string.dart';
@@ -14,8 +16,30 @@ class CreateQuiz extends StatefulWidget {
 
 class _CreateQuizState extends State<CreateQuiz> {
   final _formKey = GlobalKey<FormState>();
-  late String quizImageUrl, quizTitle, quizDescription, quizId;
+  late String quizImageUrl,
+      quizTitle,
+      quizDescription,
+      quizId,
+      quizCodeController;
   DatabaseService databaseService = new DatabaseService();
+  String? currentUserId;
+
+  @override
+  void initState() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      currentUserId = user.uid;
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SignIn(),
+        ),
+      );
+      //chuyển hướng đến màn hình đăng nhập.
+    }
+    super.initState();
+  }
 
   bool _isLoading = false;
 
@@ -30,9 +54,13 @@ class _CreateQuizState extends State<CreateQuiz> {
         "quizId": quizId,
         "quizImgurl": quizImageUrl,
         "quizTitle": quizTitle,
-        "quizDescription": quizDescription
+        "quizDescription": quizDescription,
+        "createdBy": currentUserId!,
+        "quizCode": quizCodeController,
       };
-      await databaseService.addQuizzData(quizMap, quizId).then((value) {
+      await databaseService
+          .addQuizzData(quizMap, quizId, currentUserId!, quizCodeController)
+          .then((value) {
         setState(() {
           _isLoading = false;
           Navigator.pushReplacement(
@@ -107,6 +135,15 @@ class _CreateQuizState extends State<CreateQuiz> {
                       ),
                       onChanged: (val) {
                         quizDescription = val;
+                      },
+                    ),
+                    TextFormField(
+                      validator: (val) => val!.isEmpty ? "Enter Code" : null,
+                      decoration: const InputDecoration(
+                        hintText: "Code Quizz",
+                      ),
+                      onChanged: (val) {
+                        quizCodeController = val;
                       },
                     ),
                     const Spacer(),

@@ -3,39 +3,52 @@ import 'package:flutter/services.dart';
 import 'package:quizmaker/helper/functions.dart';
 import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/views/home.dart';
-import 'package:quizmaker/views/signup.dart';
+import 'package:quizmaker/views/Account/signin.dart';
 import 'package:quizmaker/widgets/widgets.dart';
 
-class SignIn extends StatefulWidget {
-  const SignIn({super.key});
+class SignUp extends StatefulWidget {
+  const SignUp({super.key});
 
   @override
-  State<SignIn> createState() => _SignInState();
+  State<SignUp> createState() => _SignUpState();
 }
 
-class _SignInState extends State<SignIn> {
+class _SignUpState extends State<SignUp> {
   final _formKey = GlobalKey<FormState>();
-  late String email, password;
+  late String name, email, password;
+  String role = "";
   AuthServices authServices = new AuthServices();
-  bool _isLoading = false;
-
-  SignIn() async {
+  bool _isloading = false;
+  signUp() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
-        _isLoading = true;
+        _isloading = true;
       });
-      await authServices.signInEmailAndPassword(email, password).then((value) {
+      authServices
+          .signUpWithEmailAndPassword(email, password, name, role)
+          .then((value) {
         if (value != null) {
           setState(() {
-            _isLoading = false;
+            _isloading = false;
           });
           HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => Home(),
-            ),
-          );
+          if (email.contains("gv")) {
+            HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const Home(),
+              ),
+            );
+          } else {
+            HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const Home(),
+              ),
+            );
+          }
         }
       });
     }
@@ -50,7 +63,7 @@ class _SignInState extends State<SignIn> {
         elevation: 0.0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
-      body: _isLoading
+      body: _isloading
           ? Container(
               child: const Center(
                 child: CircularProgressIndicator(),
@@ -63,6 +76,18 @@ class _SignInState extends State<SignIn> {
                 child: Column(
                   children: [
                     const Spacer(),
+                    TextFormField(
+                      validator: (val) {
+                        return val!.isEmpty ? "Enter Name" : null;
+                      },
+                      decoration: const InputDecoration(
+                        hintText: "Name",
+                      ),
+                      onChanged: (val) {
+                        name = val;
+                      },
+                    ),
+                    const SizedBox(height: 6),
                     TextFormField(
                       validator: (val) {
                         return val!.isEmpty ? "Enter correct email" : null;
@@ -90,11 +115,11 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(height: 24),
                     GestureDetector(
                       onTap: () {
-                        SignIn();
+                        signUp();
                       },
                       child: blueButton(
                         context: context,
-                        label: "SignIn",
+                        label: "Sign Up",
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -102,20 +127,19 @@ class _SignInState extends State<SignIn> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          "Don't have an account? ",
+                          "Already have an account? ",
                           style: TextStyle(fontSize: 15.5),
                         ),
                         GestureDetector(
                           onTap: () {
                             Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const SignUp(),
-                              ),
-                            );
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignIn(),
+                                ));
                           },
                           child: const Text(
-                            "Sign Up",
+                            "Sign In",
                             style: TextStyle(
                               fontSize: 15.5,
                               decoration: TextDecoration.underline,
