@@ -1,7 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quizmaker/helper/functions.dart';
+import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/services/database.dart';
+import 'package:quizmaker/views/Account/signin.dart';
 import 'package:quizmaker/views/create_quiz.dart';
 import 'package:quizmaker/views/play_quiz.dart';
 import 'package:quizmaker/widgets/widgets.dart';
@@ -16,41 +20,68 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   Stream? quizStream;
   DatabaseService databaseService = new DatabaseService();
+  late String currentUserId;
+
+  Future<String> getCurrentUserName() async {
+    String userName = 'Guest';
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await AuthServices.firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          userName = userDoc['name'] ?? 'Guest';
+        }
+      }
+    } catch (e) {
+      print("Lỗi nè: $e");
+    }
+    return userName;
+  }
 
   Widget quizList() {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 24),
       child: StreamBuilder(
         stream: quizStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
+            return const CircularProgressIndicator();
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data == null) {
-            return Center(child: Text('No data available.'));
+            return const Center(child: Text('No data available.'));
           } else {
             var querySnapshot =
                 snapshot.data as QuerySnapshot<Map<String, dynamic>>;
             var quizList = querySnapshot.docs;
 
-            return ListView.builder(
-              itemCount: quizList.length,
-              itemBuilder: (context, index) {
-                var quiz = quizList[index].data() as Map<String, dynamic>;
-                if (quiz.containsKey("quizImgurl") &&
-                    quiz.containsKey("quizDescription") &&
-                    quiz.containsKey("quizTitle")) {
-                  return QuizTile(
+            List<QuizTile> userQuizTiles = [];
+
+            for (var quizDoc in quizList) {
+              var quiz = quizDoc.data() as Map<String, dynamic>;
+              if (quiz.containsKey("quizImgurl") &&
+                  quiz.containsKey("quizDescription") &&
+                  quiz.containsKey("quizTitle") &&
+                  quiz.containsKey("createdBy")) {
+                String createdBy = quiz["createdBy"];
+                if (createdBy == currentUserId) {
+                  userQuizTiles.add(QuizTile(
                     imgUrl: quiz["quizImgurl"] as String,
                     desc: quiz["quizDescription"] as String,
                     title: quiz["quizTitle"] as String,
                     quizId: quiz["quizId"] as String,
-                  );
-                } else {
-                  // Trường dữ liệu không hợp lý, bạn có thể trả về một widget trống hoặc thông báo lỗi tùy vào yêu cầu của bạn.
-                  return Container();
+                  ));
                 }
+              }
+            }
+
+            return ListView.builder(
+              itemCount: userQuizTiles.length,
+              itemBuilder: (context, index) {
+                return userQuizTiles[index];
               },
             );
           }
@@ -66,6 +97,19 @@ class _HomeState extends State<Home> {
         quizStream = val;
       });
     });
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      currentUserId = user.uid;
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SignIn(),
+        ),
+      );
+    }
+
     super.initState();
   }
 
@@ -77,6 +121,57 @@ class _HomeState extends State<Home> {
         backgroundColor: Colors.transparent,
         elevation: 0.0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu),
+            onSelected: (value) {
+              if (value == 'Account') {}
+              if (value == 'Settings') {
+              } else if (value == 'Logout') {
+                HelperFunctions.saveUserLoggedInDetails(isLoggedin: false);
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => const SignIn(),
+                  ),
+                  (Route<dynamic> route) =>
+                      false, // Loại bỏ mọi màn hình khác khỏi ngăn xếp
+                );
+              }
+            },
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                  10.0), // Bo tròn góc của PopupMenuButton
+            ),
+            itemBuilder: (BuildContext context) {
+              return <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'Account',
+                  child: ListTile(
+                    leading: Icon(Icons.account_circle),
+                    title: FutureBuilder<String>(
+                      future: getCurrentUserName(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        return Text(snapshot.data ?? 'Guest');
+                      },
+                    ),
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Settings',
+                  child: Text('Settings'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Logout',
+                  child: Text('Logout'),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: quizList(),
       floatingActionButton: FloatingActionButton(

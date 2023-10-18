@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:quizmaker/helper/functions.dart';
-import 'package:quizmaker/views/home.dart';
-import 'package:quizmaker/views/signin.dart';
+import 'package:quizmaker/views/Account/signin.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:quizmaker/views/home.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
