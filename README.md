@@ -20,6 +20,7 @@ Hướng phát triển:
   - Quản lý thông báo
 
 <img src="https://cf.quizizz.com/img/quizizz_logos/purple-brandmark-300x82.png" alt="GitHub Readme Stats Themes" width="200px"/>
+<img src="https://img.freepik.com/premium-vector/quiz-logo-with-speech-bubble-icon_149152-811.jpg" alt="GitHub Readme Stats Themes" width="200px"/>
 
 
 
