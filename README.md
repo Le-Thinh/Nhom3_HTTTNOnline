@@ -1,4 +1,8 @@
 Nhóm 9 - Ca 2 - Thứ 4 
+Giới thiệu thành viên:
+- Lê Quốc Thịnh - 21DH114147 - Main Dev
+- Trần Minh Thịnh - 21DH114155 - Product Owner
+- Phạm Võ Anh Khôi - 21DH114433 - Scum Master
 
 Đề tài: Hệ thống thi trắc nghiệm online
 - Sau bối cảnh đại dịch COVID-19 diễn ra trên toàn cầu, hệ thống thi trắc nghiệm online đã trở thành một giải pháp hữu ích để đáp ứng nhu cầu giáo dục và đánh giá kiến thức của người học một cách an toàn và tiện lợi.
