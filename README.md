@@ -9,4 +9,7 @@ Công nghệ: Flutter
 Những gì đã làm:
   - Quản lý tài khoản (Đăng nhập, đăng ký, đổi mật khẩu, quên mật khẩu,..)
   - Quản lý bài thi trắc nghiệm (thêm, sửa, xóa, làm, hiển thị kết quả bài thi)
-  - Quản lý điểm (showlist bài thi)
+  - Quản lý điểm (showlist điểm bài thi)
+
+Hướng phát triển
+  - 
