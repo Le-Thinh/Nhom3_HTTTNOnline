@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quizmaker/helper/functions.dart';
 import 'package:quizmaker/services/auth.dart';
-import 'package:quizmaker/views/Screen_main/quantri_screen.dart';
+import 'package:quizmaker/views/Screen_main/QuanTri/quantri_screen.dart';
 import 'package:quizmaker/views/Screen_main/sinhvien_screen.dart';
 import 'package:quizmaker/views/home.dart';
 import 'package:quizmaker/views/Account/signup.dart';
@@ -51,7 +51,7 @@ class _SignInState extends State<SignIn> {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const Home(),
+                    builder: (context) => Home(),
                   ),
                 );
               } else {
@@ -146,7 +146,7 @@ class _SignInState extends State<SignIn> {
                             );
                           },
                           child: const Text(
-                            "Sign Up",
+                            "Forgot passowrd?",
                             style: TextStyle(
                               fontSize: 15.5,
                               decoration: TextDecoration.underline,

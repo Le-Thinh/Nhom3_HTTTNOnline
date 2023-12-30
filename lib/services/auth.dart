@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:quizmaker/models/user.dart';
+import 'package:random_string/random_string.dart';
 
 class AuthServices {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -15,6 +16,41 @@ class AuthServices {
             email: user.email ?? "")
         : null;
     // Users(uid: user.uid);
+  }
+
+  User? getCurrentUser() {
+    return _auth.currentUser;
+  }
+
+  String? getCurrentUserId() {
+    User? user = getCurrentUser();
+    if (user != null) {
+      return user.uid;
+    } else {
+      return null;
+    }
+  }
+
+  Future<String?> getCurrentUserName() async {
+    try {
+      User? user = getCurrentUser();
+      if (user != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          return userDoc['name'] ?? "";
+        } else {
+          return "User Not Found";
+        }
+      }
+    } catch (e) {
+      print("Error: $e");
+
+      return null;
+    }
+    return null;
   }
 
   Future signInEmailAndPassword(String email, String password) async {
@@ -61,6 +97,7 @@ class AuthServices {
       }
 
       await firestore.collection('users').doc(firebaseUser?.uid).set({
+        'id': firebaseUser?.uid,
         'password': password,
         'name': name,
         'email': email,

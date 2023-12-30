@@ -5,22 +5,44 @@ import 'package:flutter/services.dart';
 import 'package:quizmaker/helper/functions.dart';
 import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/services/database.dart';
+import 'package:quizmaker/views/Account/ResetPass.dart';
 import 'package:quizmaker/views/Account/signin.dart';
+import 'package:quizmaker/views/Screen_main/GiaoVien/giaovien_class.dart';
 import 'package:quizmaker/views/create_quiz.dart';
-import 'package:quizmaker/views/play_quiz.dart';
+import 'package:quizmaker/views/create_test_title.dart';
+import 'package:quizmaker/views/edit_quiz.dart';
+import 'package:quizmaker/views/list_score.dart';
+import 'package:quizmaker/views/profile/profile_main.dart';
 import 'package:quizmaker/widgets/widgets.dart';
 
 class Home extends StatefulWidget {
-  const Home({Key? key});
+  Home({Key? key}) : super(key: key);
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
+  String? quizId;
   Stream? quizStream;
   DatabaseService databaseService = new DatabaseService();
   late String currentUserId;
+  List<QuizTile> userQuizTiles = [];
+
+  void updateQuizStream() {
+    databaseService.getQuizData().then((val) {
+      setState(() {
+        quizStream = val;
+      });
+    });
+  }
+
+  void RemoveQuiz(String quizId) {
+    setState(() {
+      userQuizTiles.removeWhere((quizTile) => quizTile.quizId == quizId);
+    });
+    databaseService.deleteQuiz(quizId);
+  }
 
   Future<String> getCurrentUserName() async {
     String userName = 'Guest';
@@ -39,6 +61,25 @@ class _HomeState extends State<Home> {
       print("Lỗi nè: $e");
     }
     return userName;
+  }
+
+  Future<String> getCurrentUserId() async {
+    String userId = 'Guest';
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await AuthServices.firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          userId = userDoc['id'] ?? 'Guest';
+        }
+      }
+    } catch (e) {
+      print("Lỗi nè: $e");
+    }
+    return userId;
   }
 
   Widget quizList() {
@@ -73,6 +114,7 @@ class _HomeState extends State<Home> {
                     desc: quiz["quizDescription"] as String,
                     title: quiz["quizTitle"] as String,
                     quizId: quiz["quizId"] as String,
+                    deleteCallback: RemoveQuiz,
                   ));
                 }
               }
@@ -124,9 +166,33 @@ class _HomeState extends State<Home> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.menu),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'Account') {}
               if (value == 'Settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserProfilePage(),
+                  ),
+                );
+              }
+              if (value == 'Classes') {
+                String teacherId = await getCurrentUserId();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClassGiaoVienScreen(
+                      teacherId: teacherId,
+                    ),
+                  ),
+                );
+              } else if (value == 'ResetPassword') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ResetPassword(),
+                  ),
+                );
               } else if (value == 'Logout') {
                 HelperFunctions.saveUserLoggedInDetails(isLoggedin: false);
                 Navigator.of(context).pushAndRemoveUntil(
@@ -165,6 +231,14 @@ class _HomeState extends State<Home> {
                   child: Text('Settings'),
                 ),
                 const PopupMenuItem<String>(
+                  value: 'Classes',
+                  child: Text('Classes'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'ResetPassword',
+                  child: Text('ResetPassword'),
+                ),
+                const PopupMenuItem<String>(
                   value: 'Logout',
                   child: Text('Logout'),
                 ),
@@ -177,11 +251,49 @@ class _HomeState extends State<Home> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreateQuiz(),
-            ),
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text(
+                  "Select the type! ",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.black54,
+                  ),
+                ),
+                contentPadding: EdgeInsets.all(16.0),
+                content: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateQuiz(),
+                          ),
+                        );
+                      },
+                      child: Text("Create Quiz"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Điều hướng đến trang tạo Test khi nhấn vào nút "Test"
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TestScreen(),
+                          ),
+                        );
+                      },
+                      child: Text("Create Test"),
+                    ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
@@ -190,16 +302,41 @@ class _HomeState extends State<Home> {
 }
 
 class QuizTile extends StatelessWidget {
+  DatabaseService databaseService = new DatabaseService();
+
+  void deleteQuiz(String quizId) {
+    databaseService.deleteQuiz(quizId);
+  }
+
+  void removeQuizFromList(BuildContext context, String quizId) {
+    try {
+      _HomeState? homeState = context.findAncestorStateOfType<_HomeState>();
+      if (homeState != null) {
+        removeQuizFromList(context, quizId);
+        homeState.updateQuizStream();
+        databaseService.deleteQuiz(quizId);
+      } else {
+        print("Error: _HomeState is null");
+      }
+    } catch (e) {
+      print("Lỗi $e");
+    }
+  }
+
   final String imgUrl;
   final String title;
   final String desc;
   final String quizId;
-  const QuizTile(
-      {Key? key,
-      required this.imgUrl,
-      required this.title,
-      required this.desc,
-      required this.quizId});
+  final Function(String) deleteCallback;
+
+  QuizTile({
+    Key? key,
+    required this.imgUrl,
+    required this.title,
+    required this.desc,
+    required this.quizId,
+    required this.deleteCallback,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +345,9 @@ class QuizTile extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PlayQuiz(quizId),
+            builder: (context) => ListScore(
+              quizId: quizId,
+            ),
           ),
         );
       },
@@ -252,6 +391,68 @@ class QuizTile extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Align(
+              alignment: Alignment.topRight,
+              child: PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    // Xử lý khi người dùng chọn "Edit"
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditQuiz(quizId: quizId),
+                      ),
+                    );
+                  } else if (value == 'delete') {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Confirm Delete'),
+                          content: const Text('Are you sure ?'),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text('Cancel'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            TextButton(
+                              child: const Text('OK'),
+                              onPressed: () {
+                                deleteCallback(quizId);
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  } else if (value ==
+                      'points') {} //Phải làm lưu khi người dùng playquiz trước
+                },
+                itemBuilder: (BuildContext context) {
+                  return <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.edit,
+                        ),
+                        title: Text('Edit'),
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete),
+                        title: Text('Delete'),
+                      ),
+                    ),
+                  ];
+                },
               ),
             ),
           ],
