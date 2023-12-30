@@ -5,6 +5,7 @@ import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/views/home.dart';
 import 'package:quizmaker/views/Account/signin.dart';
 import 'package:quizmaker/widgets/widgets.dart';
+import 'package:random_string/random_string.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -24,33 +25,33 @@ class _SignUpState extends State<SignUp> {
       setState(() {
         _isloading = true;
       });
-      authServices
-          .signUpWithEmailAndPassword(email, password, name, role)
-          .then((value) {
-        if (value != null) {
-          setState(() {
-            _isloading = false;
-          });
-          HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
-          if (email.contains("gv")) {
+      authServices.signUpWithEmailAndPassword(email, password, name, role).then(
+        (value) {
+          if (value != null) {
+            setState(() {
+              _isloading = false;
+            });
             HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const Home(),
-              ),
-            );
-          } else {
-            HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const Home(),
-              ),
-            );
+            if (email.contains("gv")) {
+              HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Home(),
+                ),
+              );
+            } else {
+              HelperFunctions.saveUserLoggedInDetails(isLoggedin: true);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Home(),
+                ),
+              );
+            }
           }
-        }
-      });
+        },
+      );
     }
   }
 

@@ -11,6 +11,7 @@ class HelperFunctions {
   static Future<bool> getUserLoggedInDetails() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool? loggedIn = prefs.getBool(userLoggedInKey);
+    print("Trạng thái đăng nhập: $loggedIn");
     return loggedIn ?? false;
   }
 }

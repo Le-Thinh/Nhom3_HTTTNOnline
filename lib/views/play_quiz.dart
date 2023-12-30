@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quizmaker/models/question_model.dart';
+import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/services/database.dart';
+import 'package:quizmaker/services/play_score.dart';
 import 'package:quizmaker/views/result.dart';
 import 'package:quizmaker/widgets/quiz_play_widgets.dart';
 import 'package:quizmaker/widgets/widgets.dart';
@@ -21,6 +23,7 @@ int _incorrect = 0;
 int _notAttempted = 0;
 
 class _PlayQuizState extends State<PlayQuiz> {
+  AuthServices authServices = new AuthServices();
   DatabaseService databaseService = new DatabaseService();
   QuerySnapshot? questionsSnapshot;
 
@@ -120,15 +123,39 @@ class _PlayQuizState extends State<PlayQuiz> {
       ),
       floatingActionButton: FloatingActionButton(
           child: Icon(Icons.check),
-          onPressed: () {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => Results(
-                        incorrect: _incorrect,
-                        total: total,
-                        correct: _correct,
-                        notattempted: _notAttempted)));
+          onPressed: () async {
+            double userScore =
+                ((_correct.toDouble() / total.toDouble()) * 10).toDouble();
+            double userScoreRounded =
+                double.parse(userScore.toStringAsFixed(2));
+
+            String? userId = authServices.getCurrentUserId();
+            String? userName = await authServices.getCurrentUserName();
+            String? quizId = widget.quizId;
+
+            try {
+              if (userId != null && userName != null && quizId != null) {
+                uploadUserData(userId, userName, userScoreRounded, quizId);
+
+                // Hiển thị màn hình kết quả cho người dùng (nếu cần)
+
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => Results(
+                            incorrect: _incorrect,
+                            total: total,
+                            correct: _correct,
+                            notattempted: _notAttempted)));
+              } else {
+                // Xử lý trường hợp nếu có giá trị null
+                // Hiển thị thông báo hoặc thực hiện các hành động khác tùy thuộc vào yêu cầu của bạn.
+                print(
+                    "Có giá trị null: userId=$userId, userName=$userName, quizId=$quizId");
+              }
+            } catch (e) {
+              print("Error: $e");
+            }
           }),
     );
   }

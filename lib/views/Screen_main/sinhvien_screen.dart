@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:quizmaker/helper/functions.dart';
 import 'package:quizmaker/services/auth.dart';
 import 'package:quizmaker/services/database.dart';
+import 'package:quizmaker/views/Account/ResetPass.dart';
 import 'package:quizmaker/views/Account/signin.dart';
+import 'package:quizmaker/views/Screen_main/Screen_sinhvien/class_sinhvien.dart';
 import 'package:quizmaker/views/play_quiz.dart';
+import 'package:quizmaker/views/profile/profile_main.dart';
 import 'package:quizmaker/widgets/widgets.dart';
 
 class SinhVienScreen extends StatefulWidget {
@@ -40,6 +43,25 @@ class _SinhVienScreenState extends State<SinhVienScreen> {
     return userName;
   }
 
+  Future<String> getCurrentUserId() async {
+    String userId = 'Guest';
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await AuthServices.firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          userId = userDoc['id'] ?? 'Guest';
+        }
+      }
+    } catch (e) {
+      print("Lỗi nè: $e");
+    }
+    return userId;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,9 +73,33 @@ class _SinhVienScreenState extends State<SinhVienScreen> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.menu),
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'Account') {}
               if (value == 'Settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserProfilePage(),
+                  ),
+                );
+              }
+              if (value == 'Class') {
+                String uid = await getCurrentUserId();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClassSinhVienScreen(
+                      uid: uid,
+                    ),
+                  ),
+                );
+              } else if (value == 'ResetPassword') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ResetPassword(),
+                  ),
+                );
               } else if (value == 'Logout') {
                 HelperFunctions.saveUserLoggedInDetails(isLoggedin: false);
                 Navigator.of(context).pushAndRemoveUntil(
@@ -90,6 +136,14 @@ class _SinhVienScreenState extends State<SinhVienScreen> {
                 const PopupMenuItem<String>(
                   value: 'Settings',
                   child: Text('Settings'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Class',
+                  child: Text('Class'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'ResetPassword',
+                  child: Text('Change Password'),
                 ),
                 const PopupMenuItem<String>(
                   value: 'Logout',
